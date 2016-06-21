@@ -14,7 +14,7 @@ import (
 func CreateWorkingDirectory() string {
 	currentPath, _ := filepath.Abs(".")
 	tmpName := time.Now().Unix()
-	workingPath := filepath.Join(currentPath, fmt.Sprintf("pdf-diff-%d", tmpName))
+	workingPath := filepath.Join(currentPath, fmt.Sprintf("diff-pdf-result-%d", tmpName))
 
 	err := os.Mkdir(workingPath, 0755)
 	if err != nil {
