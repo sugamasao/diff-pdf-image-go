@@ -63,7 +63,6 @@ func ToImage(targetType string, targetPDF string, outputPath string) []string {
 
 func ToGrayScale(path string) string {
 	outputPath := fmt.Sprintf("%s.gray.jpg", path)
-	fmt.Println("convert", path, "-type GrayScale", outputPath)
 	out, err := exec.Command("convert", path, "-type", "GrayScale", outputPath).CombinedOutput()
 
 	if err != nil {
@@ -123,10 +122,10 @@ func ParseArguments(args []string) (string, string, int, error) {
 	var page int = 0
 
 	if len(args) >= 3 {
-		pdfA = os.Args[1]
-		pdfB = os.Args[2]
-		if os.Args[3] != "" {
-			page, _ = strconv.Atoi(os.Args[3])
+		pdfA = args[1]
+		pdfB = args[2]
+		if len(args) >= 4 {
+			page, _ = strconv.Atoi(args[3])
 		}
 	} else {
 		command := path.Base(args[0])
