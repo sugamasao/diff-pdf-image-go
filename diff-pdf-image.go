@@ -11,6 +11,8 @@ import (
 	"time"
 )
 
+const version string = "0.0.1"
+
 func CreateWorkingDirectory() string {
 	currentPath, _ := filepath.Abs(".")
 	tmpName := time.Now().Unix()
@@ -130,7 +132,7 @@ func ParseArguments(args []string) (string, string, int, error) {
 		}
 	} else {
 		command := path.Base(args[0])
-		return pdfA, pdfB, page, fmt.Errorf("%s pdf_a pdf_b [diff page number]", command)
+		return pdfA, pdfB, page, fmt.Errorf("$ %s foo.pdf bar.pdf [diff page number]\nVersion:%s", command, version)
 	}
 
 	files := []string{pdfA, pdfB}
