@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"time"
 )
@@ -172,5 +173,9 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
+	}
+
+	if runtime.GOOS == "darwin" {
+		exec.Command("open", path).CombinedOutput()
 	}
 }
