@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-const version string = "0.0.1"
+const version string = "0.0.2"
 
 func CreateWorkingDirectory() string {
 	currentPath, _ := filepath.Abs(".")
@@ -49,7 +49,7 @@ func ToImage(targetType string, targetPDF string, outputPath string) []string {
 		"-dGraphicsAlphaBits=4",
 		"-dMaxStripSize=8192",
 	}
-	gsOption = append(gsOption, fmt.Sprintf("-sOutputFile=%s/%s_%s.jpg", outputPath, targetType, "%d"))
+	gsOption = append(gsOption, fmt.Sprintf("-sOutputFile=%s/%s_%s.jpg", outputPath, targetType, "%04d"))
 	gsOption = append(gsOption, targetPDF)
 
 	_, err := exec.Command("gs", gsOption...).Output()
