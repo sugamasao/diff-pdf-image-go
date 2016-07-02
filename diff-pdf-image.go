@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-const version string = "0.0.2"
+const version string = "0.0.3"
 
 func CreateWorkingDirectory() string {
 	currentPath, _ := filepath.Abs(".")
@@ -39,77 +39,9 @@ func CreateTempDirectory(basePath string) string {
 	return workingPath
 }
 
-func ToImage(targetType string, targetPDF string, outputPath string) []string {
-	gsOption := []string{
-		"-dBATCH",
-		"-dNOPAUSE",
-		"-sDEVICE=jpeg",
-		"-r150",
-		"-dTextAlphaBits=4",
-		"-dGraphicsAlphaBits=4",
-		"-dMaxStripSize=8192",
-	}
-	gsOption = append(gsOption, fmt.Sprintf("-sOutputFile=%s/%s_%s.jpg", outputPath, targetType, "%04d"))
-	gsOption = append(gsOption, targetPDF)
-
-	_, err := exec.Command("gs", gsOption...).Output()
-
-	if err != nil {
-		fmt.Println("ToImage error", err)
-		os.Exit(1)
-	}
-
-	list, _ := filepath.Glob(fmt.Sprintf("%s/%s*.jpg", outputPath, targetType))
-
-	return list
-}
-
-func ToGrayScale(path string) string {
-	outputPath := fmt.Sprintf("%s.gray.jpg", path)
-	out, err := exec.Command("convert", path, "-type", "GrayScale", outputPath).CombinedOutput()
-
-	if err != nil {
-		fmt.Println("ToGrayScale error", err, string(out))
-		os.Exit(1)
-	}
-
-	return outputPath
-}
-
-func ToRed(path string) string {
-	gray_path := ToGrayScale(path)
-
-	outputPath := fmt.Sprintf("%s.red.jpg", gray_path)
-	out, err := exec.Command("convert", gray_path, "+level-colors", "Red,White", outputPath).CombinedOutput()
-
-	if err != nil {
-		fmt.Println("ToRed error", err, string(out))
-		os.Exit(1)
-	}
-
-	return outputPath
-}
-
-func ToBlue(path string) string {
-	gray_path := ToGrayScale(path)
-
-	outputPath := fmt.Sprintf("%s.red.jpg", gray_path)
-	out, err := exec.Command("convert", gray_path, "+level-colors", "Blue,White", outputPath).CombinedOutput()
-
-	if err != nil {
-		fmt.Println("ToBlue error", err, string(out))
-		os.Exit(1)
-	}
-
-	return outputPath
-}
-
 func Diff(pdf_a string, pdf_b string, workingPath string, count int) string {
-	pdf_a_path := ToRed(pdf_a)
-	pdf_b_path := ToBlue(pdf_b)
-
 	outputPath := filepath.Join(workingPath, fmt.Sprintf("diff-%03d.jpg", count))
-	out, err := exec.Command("convert", pdf_a_path, pdf_b_path, "-compose", "Multiply", "-composite", outputPath).CombinedOutput()
+	out, err := exec.Command("convert", pdf_a, pdf_b, "-compose", "Multiply", "-composite", outputPath).CombinedOutput()
 
 	if err != nil {
 		fmt.Println("error", err, string(out))
@@ -147,27 +79,29 @@ func ParseArguments(args []string) (string, string, int, error) {
 }
 
 func main() {
-	var pdfA string = ""
-	var pdfB string = ""
+	var pdfAPath string = ""
+	var pdfBPath string = ""
 	var page int = 0
-	pdfA, pdfB, page, err := ParseArguments(os.Args)
+	pdfAPath, pdfBPath, page, err := ParseArguments(os.Args)
 
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
+	var pdfA *PDF = newPDF(pdfAPath, "pdf_a")
+	var pdfB *PDF = newPDF(pdfBPath, "pdf_b")
+
 	var path string = CreateWorkingDirectory()
 	var tmpPath string = CreateTempDirectory(path)
-	pdfAList := ToImage("pdf_a", pdfA, tmpPath)
-	pdfBList := ToImage("pdf_b", pdfB, tmpPath)
 
-	for i, v := range pdfAList {
+	pdfA.ToImage(tmpPath)
+	pdfB.ToImage(tmpPath)
+
+	for i, _ := range pdfA.Images {
 		var index int = i + 1
-		if page == 0 { // all page diff.
-			fmt.Println("generate Diff Image :", Diff(v, pdfBList[i], path, index))
-		} else if page == index { // diff only in page number.
-			fmt.Println("generate Diff Image :", Diff(v, pdfBList[i], path, index))
+		if page == 0 || page == index { // 0 is all pages.
+			fmt.Println("generate Diff Image :", Diff(pdfA.ToRed(i), pdfB.ToBlue(i), path, index))
 		}
 	}
 
