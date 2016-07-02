@@ -13,76 +13,6 @@ import (
 
 const version string = "0.0.3"
 
-type PDF struct {
-	path   string
-	prefix string
-	Images []string
-}
-
-func newPDF(path string, prefix string) *PDF {
-	p := new(PDF)
-	p.path = path
-	p.prefix = prefix
-	return p
-}
-
-func (p *PDF) toImage(tmpPath string) {
-	gsOption := []string{
-		"-dBATCH",
-		"-dNOPAUSE",
-		"-sDEVICE=jpeg",
-		"-r150",
-		"-dTextAlphaBits=4",
-		"-dGraphicsAlphaBits=4",
-		"-dMaxStripSize=8192",
-	}
-	gsOption = append(gsOption, fmt.Sprintf("-sOutputFile=%s/%s_%s.jpg", tmpPath, p.prefix, "%04d"))
-	gsOption = append(gsOption, p.path)
-
-	_, err := exec.Command("gs", gsOption...).Output()
-
-	if err != nil {
-		fmt.Println("ToImage error", err)
-		os.Exit(1)
-	}
-	p.Images, _ = filepath.Glob(fmt.Sprintf("%s/%s*.jpg", tmpPath, p.prefix))
-}
-
-func (p PDF) toGrayScale(path string) string {
-	outputPath := fmt.Sprintf("%s.gray.jpg", path)
-	out, err := exec.Command("convert", path, "-type", "GrayScale", outputPath).CombinedOutput()
-
-	if err != nil {
-		fmt.Println("ToGrayScale error", err, string(out))
-		os.Exit(1)
-	}
-
-	return outputPath
-}
-
-func (p PDF) toColorImage(color string, path string) string {
-	grayPath := p.toGrayScale(path)
-	outputPath := fmt.Sprintf("%s.%s.jpg", grayPath, color)
-	colorOption := fmt.Sprintf("%s,White", color)
-
-	out, err := exec.Command("convert", grayPath, "+level-colors", colorOption, outputPath).CombinedOutput()
-
-	if err != nil {
-		fmt.Println("ToRed error", err, string(out))
-		os.Exit(1)
-	}
-
-	return outputPath
-}
-
-func (p PDF) toRed(index int) string {
-	return p.toColorImage("Red", p.Images[index])
-}
-
-func (p PDF) toBlue(index int) string {
-	return p.toColorImage("Blue", p.Images[index])
-}
-
 func CreateWorkingDirectory() string {
 	currentPath, _ := filepath.Abs(".")
 	tmpName := time.Now().Unix()
@@ -165,13 +95,13 @@ func main() {
 	var path string = CreateWorkingDirectory()
 	var tmpPath string = CreateTempDirectory(path)
 
-	pdfA.toImage(tmpPath)
-	pdfB.toImage(tmpPath)
+	pdfA.ToImage(tmpPath)
+	pdfB.ToImage(tmpPath)
 
 	for i, _ := range pdfA.Images {
 		var index int = i + 1
 		if page == 0 || page == index { // 0 is all pages.
-			fmt.Println("generate Diff Image :", Diff(pdfA.toRed(i), pdfB.toBlue(i), path, index))
+			fmt.Println("generate Diff Image :", Diff(pdfA.ToRed(i), pdfB.ToBlue(i), path, index))
 		}
 	}
 
